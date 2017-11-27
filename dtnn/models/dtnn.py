@@ -5,6 +5,10 @@ import tensorflow as tf
 from dtnn.atoms import interatomic_distances, site_rdf
 from ..core import Model
 
+def ssp(x):
+    return tf.nn.softplus(x) + np.log(.5)
+    
+
 
 class DTNN(Model):
     """
@@ -78,32 +82,35 @@ class DTNN(Model):
         mask *= offdiag
         mask = tf.expand_dims(mask, -1)
 
+#embedding 
         I = np.eye(self.max_z).astype(np.float32)
         ZZ = tf.nn.embedding_lookup(I, Z)
         r = tf.sqrt(1. / tf.sqrt(float(self.n_basis)))
         X = L.dense(ZZ, self.n_basis, use_bias=False,
                     weight_init=tf.random_normal_initializer(stddev=r))
 
-        fC = L.dense(C, self.n_factors, use_bias=True)
 
-        reuse = None
+
         for i in range(self.n_interactions):
+                        
             tmp = tf.expand_dims(X, 1)
 
-            fX = L.dense(tmp, self.n_factors, use_bias=True,
-                         scope='in2fac', reuse=reuse)
+            fX = L.dense(tmp, self.n_factors, use_bias=True) #atom wise layer
+            
+            fC = L.dense(C, self.n_factors, use_bias=True) #cfconv
+            
+            fVj = fX * fC #cfconv tf: elementweise mult. / conv mit pooling
 
-            fVj = fX * fC
-
-            Vj = L.dense(fVj, self.n_basis, use_bias=False,
+            Vjj = L.masked_sum(fVj, mask, axes=2) # pooling hinter cfconv/ ergibt faltung mit elementwise mult.
+            
+            Vj = L.dense(Vjj, self.n_basis, use_bias=False,
                          weight_init=tf.constant_initializer(0.0),
-                         nonlinearity=tf.nn.tanh,
-                         scope='fac2out', reuse=reuse)
-
-            V = L.masked_sum(Vj, mask, axes=2)
+                         nonlinearity=ssp) # hinter das pooling mit shifted sofplus
+            
+            V = L.dense(Vj, self.n_basis, use_bias=False,
+                         weight_init=tf.constant_initializer(0.0)) 
 
             X += V
-            reuse = True
 
         # output
         o1 = L.dense(X, self.n_basis // 2, nonlinearity=tf.nn.tanh)

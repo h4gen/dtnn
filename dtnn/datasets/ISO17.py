@@ -43,14 +43,14 @@ def load_atomrefs(at_path):
 
 
 def load_data(dbpath):
-    logging.info('Downloading GDB-9 data...')
-    tmpdir = tempfile.mkdtemp('gdb9')
-    tar_path = os.path.join(tmpdir, 'gdb9.tar.gz')
-    raw_path = os.path.join(tmpdir, 'gdb9_xyz')
+    logging.info('Downloading ISO17 data...')
+    tmpdir = tempfile.mkdtemp('iso17')
+    tar_path = os.path.join(tmpdir, 'iso17.tar.gz')
+    raw_path = os.path.join(tmpdir, 'iso17')
     url = 'http://quantum-machine.org/datasets/iso17.tar.gz'
 
     try:
-        urllib.request.urlretrieve(url, tar_path)
+        urllib.request.urlretrieve(url)
         logging.info("Done.")
     except HTTPError as e:
         logging.error("HTTP Error:", e.code, url)
