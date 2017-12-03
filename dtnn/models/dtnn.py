@@ -89,8 +89,6 @@ class DTNN(Model):
         X = L.dense(ZZ, self.n_basis, use_bias=False,
                     weight_init=tf.random_normal_initializer(stddev=r))
 
-
-
         for i in range(self.n_interactions):
                         
             tmp = tf.expand_dims(X, 1)
@@ -99,13 +97,13 @@ class DTNN(Model):
             
             fC = L.dense(C, self.n_factors, use_bias=True) #cfconv
             
-            fVj = fX * fC #cfconv tf: elementweise mult. / conv mit pooling
+            fVj = fX * fC 
 
-            Vjj = L.masked_sum(fVj, mask, axes=2) # pooling hinter cfconv/ ergibt faltung mit elementwise mult.
+            Vjj = L.masked_sum(fVj, mask, axes=2) 
             
             Vj = L.dense(Vjj, self.n_basis, use_bias=False,
                          weight_init=tf.constant_initializer(0.0),
-                         nonlinearity=ssp) # hinter das pooling mit shifted sofplus
+                         nonlinearity=ssp) 
             
             V = L.dense(Vj, self.n_basis, use_bias=False,
                          weight_init=tf.constant_initializer(0.0)) 
