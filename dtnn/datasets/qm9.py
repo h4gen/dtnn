@@ -12,7 +12,7 @@ from ase.units import Hartree, eV, Bohr, Ang
 
 
 def load_atomrefs(at_path):
-    logging.info('Downloading QM-9 atom references...')
+    logging.info('Downloading QM9 atom references...')
     at_url = 'https://ndownloader.figshare.com/files/3195395'
     tmpdir = tempfile.mkdtemp('gdb9')
     tmp_path = os.path.join(tmpdir, 'atomrefs.txt')
@@ -43,10 +43,10 @@ def load_atomrefs(at_path):
 
 
 def load_data(dbpath):
-    logging.info('Downloading GDB-9 data...')
-    tmpdir = tempfile.mkdtemp('gdb9')
-    tar_path = os.path.join(tmpdir, 'gdb9.tar.gz')
-    raw_path = os.path.join(tmpdir, 'gdb9_xyz')
+    logging.info('Downloading QM9 data...')
+    tmpdir = tempfile.mkdtemp('qm9')
+    tar_path = os.path.join(tmpdir, 'qm9.tar.gz')
+    raw_path = os.path.join(tmpdir, 'qm9_xyz')
     url = 'https://ndownloader.figshare.com/files/3195398'
 
     try:
@@ -78,7 +78,7 @@ def load_data(dbpath):
             xyzfile = os.path.join(raw_path, xyzfile)
 
             if i % 10000 == 0:
-                logging.info('Parsed: ' + str(i) + ' / 133885')
+                logging.info('Parsed: ' + str(i) + ' / ' + str(len(os.listdir(raw_path))))
             properties = {}
             tmp = os.path.join(tmpdir, 'tmp.xyz')
 

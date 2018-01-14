@@ -197,7 +197,7 @@ if __name__ == '__main__':
     if not os.path.exists(atom_refs):
         do_download = input(
             'No atom reference file found at `' + atom_refs + '`. ' +
-            'Should GDB-9 atom references be downloaded to that location? [y/N]')
+            'Should QM9 atom references be downloaded to that location? [y/N]')
 
         success = False
         if do_download == 'y':
