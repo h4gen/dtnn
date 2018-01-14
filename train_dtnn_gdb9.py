@@ -18,7 +18,7 @@ import tensorflow as tf
 #sys.path.append(DTNNPATH)
 
 import dtnn
-from dtnn.datasets.ISO17 import load_data, load_atomrefs
+from dtnn.datasets.qm9 import load_data, load_atomrefs
 from dtnn.models import DTNN
 from dtnn import data
 from dtnn import cost
@@ -39,15 +39,15 @@ def prepare_data(dbpath, partitions, splitdst):
 
     train_data = data.ASEDataProvider(
         os.path.join(splitdst, 'train.db'),
-        kvp={'total_energy': (1,)}, prefetch=False, shuffle=True
+        kvp={'energy_U0': (1,)}, prefetch=False, shuffle=True
     )
     val_data = data.ASEDataProvider(
         os.path.join(splitdst, 'validation.db'),
-        kvp={'total_energy': (1,)}, prefetch=True, shuffle=False
+        kvp={'energy_U0': (1,)}, prefetch=True, shuffle=False
     )
     test_data = data.ASEDataProvider(
         os.path.join(splitdst, 'test_live.db'),
-        kvp={'total_energy': (1,)}, prefetch=True, shuffle=False
+        kvp={'energy_U0': (1,)}, prefetch=True, shuffle=False
     )
     return train_data, val_data, test_data
 
@@ -56,11 +56,11 @@ def main(args):
     n_iterations = 5000000
 
     dbpath = os.path.join(args.data_dir, 'reference.db')
-    #atom_reference = os.path.join(args.data_dir, 'atom_refs.npz')
+    atom_reference = os.path.join(args.data_dir, 'atom_refs.txt.npz')
 
     # load and partition data
-    partitions = {'train': 49000, 'validation': 1000,
-                  'test_live': 1000, 'test': -1}
+    partitions = {'train': 5000, 'validation': 595,
+                  'test_live': 500, 'test': -1}
     split_dst = os.path.join(args.output_dir, args.split_name)
     train_data, val_data, test_data = prepare_data(dbpath=dbpath,
                                                    partitions=partitions,
@@ -72,21 +72,21 @@ def main(args):
     num_test_batches = 10
 
     # load atom energies
-#    atom_reference = np.load(atom_reference)
-#    e_atom = atom_reference['atom_ref'][:, 1:2]
+    atom_reference = np.load(atom_reference)
+    e_atom = atom_reference['atom_ref'][:, 1:2]
 
-    # calculate mean/std.dev. per atom
-#    U0 = np.array(train_data.get_property('energy_U0'))
-#    E = U0.reshape((-1, 1))
-#    Z = train_data.get_property('numbers')
-#    E0 = np.vstack([np.sum(e_atom[np.array(z)], 0) for z in Z]).reshape((-1, 1))
-#    N = np.array([len(z) for z in Z]).reshape((-1, 1))
-#    E0n = (E - E0) / N.reshape((-1, 1))
-#    mu = np.mean(E0n, axis=0)
-#    std = np.std(E0n, axis=0)
+#     calculate mean/std.dev. per atom
+    U0 = np.array(train_data.get_property('energy_U0'))
+    E = U0.reshape((-1, 1))
+    Z = train_data.get_property('numbers')
+    E0 = np.vstack([np.sum(e_atom[np.array(z)], 0) for z in Z]).reshape((-1, 1))
+    N = np.array([len(z) for z in Z]).reshape((-1, 1))
+    E0n = (E - E0) / N.reshape((-1, 1))
+    mu = np.mean(E0n, axis=0)
+    std = np.std(E0n, axis=0)
 
-#    logging.info('mu(E/N)=' + str(mu))
-#    logging.info('std(E/N)=' + str(std))
+    logging.info('mu(E/N)=' + str(mu))
+    logging.info('std(E/N)=' + str(std))
 
     # setup models
     mname = '{0}_{1}_{2}_{3}_{4}_{5}'.format(args.model,
@@ -106,13 +106,13 @@ def main(args):
                      cutoff=args.cutoff)
 
     # setup cost functions
-    cost_fcn = cost.L2Loss(prediction='y', target='total_energy')
+    cost_fcn = cost.L2Loss(prediction='y', target='energy_U0')
     additional_cost_fcns = [
-        cost.MeanAbsoluteError(prediction='y', target='total_energy', name='energy_U0_MAE'),
-        cost.RootMeanSquaredError(prediction='y', target='total_energy', name='energy_U0_RMSE'),
-        cost.PAMeanAbsoluteError(prediction='y', target='total_energy',
+        cost.MeanAbsoluteError(prediction='y', target='energy_U0', name='energy_U0_MAE'),
+        cost.RootMeanSquaredError(prediction='y', target='energy_U0', name='energy_U0_RMSE'),
+        cost.PAMeanAbsoluteError(prediction='y', target='energy_U0',
                                  name='energy_U0_MAE_atom'),
-        cost.PARmse(prediction='y', target='total_energy', name='energy_U0pN_RMSE_atom')
+        cost.PARmse(prediction='y', target='energy_U0', name='energy_U0pN_RMSE_atom')
     ]
 
     # setup optimizer
@@ -177,13 +177,13 @@ if __name__ == '__main__':
         os.makedirs(args.data_dir)
 
     dbpath = os.path.join(args.data_dir, 'reference.db')
-    #atom_refs = os.path.join(args.data_dir, 'atom_refs.npz')
+    atom_refs = os.path.join(args.data_dir, 'atom_refs.txt.npz')
 
-    # download data set (if needed)
+    #download data set (if needed)
     if not os.path.exists(dbpath):
         do_download = input(
             'No database found at `' + dbpath + '`. ' +
-            'Should ISO17 data be downloaded to that location? [y/N]')
+            'Should QM9 data be downloaded to that location? [y/N]')
 
         success = False
         if do_download == 'y':
@@ -193,19 +193,19 @@ if __name__ == '__main__':
             logging.info('Aborting.')
             sys.exit()
 
-#    # download atom reference energies (if needed)
-#    if not os.path.exists(atom_refs):
-#        do_download = input(
-#            'No atom reference file found at `' + atom_refs + '`. ' +
-#            'Should GDB-9 atom references be downloaded to that location? [y/N]')
-#
-#        success = False
-#        if do_download == 'y':
-#            success = load_atomrefs(atom_refs)
-#
-#        if not success:
-#            logging.info('Aborting.')
-#            sys.exit()
+    # download atom reference energies (if needed)
+    if not os.path.exists(atom_refs):
+        do_download = input(
+            'No atom reference file found at `' + atom_refs + '`. ' +
+            'Should GDB-9 atom references be downloaded to that location? [y/N]')
+
+        success = False
+        if do_download == 'y':
+            success = load_atomrefs(atom_refs)
+
+        if not success:
+            logging.info('Aborting.')
+            sys.exit()
 
     # start training procedure
     main(args)
