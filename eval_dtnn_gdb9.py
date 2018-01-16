@@ -56,7 +56,7 @@ def predict(dbpath, features, sess, y):
     with connect(dbpath) as conn:
         n_structures = conn.count()
         for row in conn.select():
-            U0.append(row['total_energy'])
+            U0.append(row['energy_U0'])
 
             at = row.toatoms()
             feed_dict = {
