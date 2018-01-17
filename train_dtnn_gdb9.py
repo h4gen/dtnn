@@ -65,7 +65,7 @@ def main(args):
     train_data, val_data, test_data = prepare_data(dbpath=dbpath,
                                                    partitions=partitions,
                                                    splitdst=split_dst)
-    train_data.batch_size = 25
+    train_data.batch_size = 32
     val_data.batch_size = 100
     test_data.batch_size = 100
     num_val_batches = 10
@@ -101,7 +101,7 @@ def main(args):
 #                     mu=mu, std=std,
                      n_interactions=args.interactions,
                      n_basis=args.basis,
-#                     atom_ref=e_atom,
+                     atom_ref=e_atom,
                      n_factors=args.factors,
                      cutoff=args.cutoff)
 

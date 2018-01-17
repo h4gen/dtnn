@@ -95,18 +95,20 @@ class DTNN(Model):
 
             fX = L.dense(tmp, self.n_factors, use_bias=True) #atom wise layer
             
-            fC = L.dense(C, self.n_factors, use_bias=True) #cfconv
+            fC = L.dense(C, self.n_factors, use_bias=True, nonlinearity=ssp)
             
-            fVj = fX * fC 
+            fCC = L.dense(fC, self.n_factors, use_bias=True, nonlinearity=ssp)
+            
+            fVj = fX * fCC 
 
             Vjj = L.masked_sum(fVj, mask, axes=2) 
             
             Vj = L.dense(Vjj, self.n_basis, use_bias=False,
                          weight_init=tf.constant_initializer(0.0),
-                         nonlinearity=ssp) 
+                         nonlinearity=ssp) # atom wise with ssp
             
             V = L.dense(Vj, self.n_basis, use_bias=False,
-                         weight_init=tf.constant_initializer(0.0)) 
+                         weight_init=tf.constant_initializer(0.0)) # atom wise 
 
             X += V
 
