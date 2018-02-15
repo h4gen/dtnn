@@ -72,6 +72,7 @@ class DTNN(Model):
     def _model(self, features):
         Z = features['numbers']
         C = features['srdf']
+        # new feature vector alchemical numbers
 
         # masking
         mask = tf.cast(tf.expand_dims(Z, 1) * tf.expand_dims(Z, 2),
@@ -82,11 +83,17 @@ class DTNN(Model):
         mask *= offdiag
         mask = tf.expand_dims(mask, -1)
 
-#embedding 
+        #embedding 
+        # skip on predict        
         I = np.eye(self.max_z).astype(np.float32)
         ZZ = tf.nn.embedding_lookup(I, Z)
         r = tf.sqrt(1. / tf.sqrt(float(self.n_basis)))
-        X = L.dense(ZZ, self.n_basis, use_bias=False,
+        
+        #new forward pass here
+        # alchemical numbers
+        
+        
+        X = L.dense(ZZ, self.n_basis, use_bias=False, # replace ZZ 
                     weight_init=tf.random_normal_initializer(stddev=r))
 
         for i in range(self.n_interactions):
@@ -104,19 +111,18 @@ class DTNN(Model):
             Vjj = L.masked_sum(fVj, mask, axes=2) 
             
             Vj = L.dense(Vjj, self.n_basis, use_bias=False,
-                         weight_init=tf.constant_initializer(0.0),
                          nonlinearity=ssp) # atom wise with ssp
             
-            V = L.dense(Vj, self.n_basis, use_bias=False,
-                         weight_init=tf.constant_initializer(0.0)) # atom wise 
+            V = L.dense(Vj, self.n_basis, use_bias=False) # atom wise 
 
             X += V
 
         # output
-        o1 = L.dense(X, self.n_basis // 2, nonlinearity=tf.nn.tanh)
+        o1 = L.dense(X, self.n_basis // 2, nonlinearity=ssp)
         yi = L.dense(o1, 1,
                      weight_init=tf.constant_initializer(0.0),
                      use_bias=True)
+        
 
         mu = tf.get_variable('mu', shape=(1,),
                              initializer=L.reference_initializer(self.mu),

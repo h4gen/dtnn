@@ -24,6 +24,7 @@ model_dir='output2/DTNN_30_60_3_20.0_split_1'
 split_dir='output2/split_1'
 
 atom0 = read('conversion/5779.xyz')
+r_vec = atom0.positions[1] - atom0.positions[16]
 
 features = {
     'numbers': tf.placeholder(tf.int64, shape=(None,)),
@@ -36,10 +37,11 @@ model = DTNN(model_dir)
 model_output = model.get_output(features, is_training=False)
 y = model_output['y']
 #%%
-xs = np.arange(0,100)
+fac = np.linspace(0,2,100)
 u = []
-for x in xs:
-    atom0.positions[0] *= x
+for a in range(10):
+    atom0.positions[16] += .1*r_vec
+#    print(atom0.positions)
     u.append(predict(atom0))
 
 #%%

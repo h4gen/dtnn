@@ -155,16 +155,16 @@ if __name__ == '__main__':
     parser.add_argument('--interactions', type=int, help='Distance cutoff',
                         default=3)
     parser.add_argument('--basis', type=int, help='Basis set size',
-                        default=30)
+                        default=64)
     parser.add_argument('--factors', type=int, help='Factor space size',
-                        default=60)
+                        default=64)
     parser.add_argument('--model', type=str,
                         help='ML model name [DTNN, DTNNv2]',
                         default='DTNN')
     parser.add_argument('--name', help='Name of run',
                         default='')
     parser.add_argument('--lr', type=float, help='Learning rate',
-                        default=1e-3)
+                        default=1e-3) # evtl 1e-4
     parser.add_argument('--half', action='store_true',
                         help='Only use half of the GPU memory')
     args = parser.parse_args()
