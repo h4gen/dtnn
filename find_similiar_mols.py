@@ -9,6 +9,9 @@ Created on Wed Jan 17 20:42:07 2018
 from rdkit import Chem
 import glob, os
 
+conv_dir='conversion/'
+
+
 filenames = []
 for file in os.listdir("conversion"):
     if file.endswith(".mol2"):
@@ -17,7 +20,7 @@ for file in os.listdir("conversion"):
 #%%
 molecules = []
 for file in filenames:
-    molecules.append(Chem.MolFromMol2File('conversion/'+file))
+    molecules.append(Chem.MolFromMol2File(conv_dir+file))
     
 #%%
 from rdkit.Chem.Fingerprints import FingerprintMols
@@ -31,10 +34,18 @@ simmat = np.zeros(shape=(len(molecules), len(molecules)))
 for i in range(len(molecules)):
     for j in range(i + 1, len(molecules)):
         simmat[i,j] = FingerprintSimilarity(fingerpints[i], fingerpints[j])
+
 #%%
-hi_sim_ids = np.unravel_index(simmat.argmax(), simmat.shape)
-print(filenames[hi_sim_ids[0]])
-print(filenames[hi_sim_ids[1]])
+import matplotlib.pyplot as plt
+plt.imshow(simmat)
+
+#%%
+hi_sim_ids0 = np.where( simmat ==1)
+for mol1, mol2 in zip(hi_sim_ids0[0],hi_sim_ids0[1]):
+    print(filenames[mol1])
+    print(filenames[mol2])
+    print('=======')
+    
 #%%
 from rdkit.Chem import MACCSkeys
 fingerpints2 = [MACCSkeys.GenMACCSKeys(mol) for mol in molecules]
@@ -43,10 +54,15 @@ simmat2 = np.zeros(shape=(len(molecules), len(molecules)))
 for i in range(len(molecules)):
     for j in range(i + 1, len(molecules)):
         simmat2[i,j] = FingerprintSimilarity(fingerpints2[i], fingerpints2[j])
-#%%
-hi_sim_ids2 = np.where( simmat2 == 1)
+        
+        #%%
+import matplotlib.pyplot as plt
+plt.imshow(simmat)
 
-for mol1, mol2 in zip(hi_sim_ids2[0],hi_sim_ids2[1]):
+#%%
+hi_sim_ids1 = np.where( simmat2 == 1)
+
+for mol1, mol2 in zip(hi_sim_ids1[0],hi_sim_ids1[1]):
     print(filenames[mol1])
     print(filenames[mol2])
     print('=======')

@@ -14,18 +14,16 @@ import tensorflow as tf
 from ase.db import connect
 from ase.visualize import mlab
 from ase.visualize import view
+from ase.io import read
 import copy
 
 from dtnn.models import DTNN
 
 
-model_dir='output/DTNN_30_60_3_20.0_split_1'
-split_dir='output/split_1'
+model_dir='output2/DTNN_30_60_3_20.0_split_1'
+split_dir='output2/split_1'
 
-path = os.path.join(split_dir, 'test_live.db')
-c = connect(path)
-l = list(c.select())
-l[0].toatoms().write('true_pos.xyz')
+atom0 = read('conversion/5779.xyz')
 
 features = {
     'numbers': tf.placeholder(tf.int64, shape=(None,)),
@@ -36,19 +34,24 @@ features = {
 
 model = DTNN(model_dir)
 model_output = model.get_output(features, is_training=False)
-y = model_output['positions']
+y = model_output['y']
+#%%
+xs = np.arange(0,100)
+u = []
+for x in xs:
+    atom0.positions[0] *= x
+    u.append(predict(atom0))
 
-with tf.Session() as sess:
-    model.restore(sess)
-    testat = l[0].toatoms()
-    feed_dict = {
-    features['numbers']:
-        np.array(testat.numbers).astype(np.int64),
-    features['positions']:
-        np.array(testat.positions).astype(np.float32)
-        }   
-    U0_p = sess.run(y, feed_dict=feed_dict)
- 
-test_at = copy.copy(l[0])
-test_at.positions = U0_p[0,:,:]
-test_at.toatoms().write('pred_pos.xyz')
+#%%
+def predict(X):
+    with tf.Session() as sess:
+        model.restore(sess)
+        atom0
+        feed_dict = {
+        features['numbers']:
+            np.array(X.numbers).astype(np.int64),
+        features['positions']:
+            np.array(X.positions).astype(np.float32)
+            }   
+        U0_p = sess.run(y, feed_dict=feed_dict)
+    return U0_p
