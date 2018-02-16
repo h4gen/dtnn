@@ -59,9 +59,17 @@ class DTNN(Model):
         positions = features['positions']
         pbc = features['pbc']
         cell = features['cell']
+        line_fac = features['line_fac']
+        line_vec = features['line_vec']
+        atom_nr = features['atom_nr']
+        tmp = positions[atom_nr,:]
+        tmp2 = line_fac * line_vec
+        tmp3 = tmp + tmp2
+        positions2 = tf.concat((positions[:atom_nr], tmp3, positions[atom_nr+1:]), axis=0)
+        
 
         distances = interatomic_distances(
-            positions, cell, pbc, self.cutoff
+            positions2, cell, pbc, self.cutoff
         )
 
         features['srdf'] = site_rdf(
