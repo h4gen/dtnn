@@ -43,10 +43,15 @@ features = {
 model = DTNN(model_dir)
 model_output = model.get_output(features, is_training=False)
 y = model_output['y']
-    
 
+#%%    
+alpha = .1
+beta = .4
+gamma =.5
+mix_vec = np.zeros(molecule0.numbers.max())
+mix_vec[np.array(list(set(molecule0.numbers)))-1] = [alpha, beta, gamma]
 #%%
-facs = np.linspace(0,4,100)
+facs = np.linspace(0,4,1000)
 energies = get_shifted_atom_energies(model, molecule0, 16, facs, r_vec)
 plt.plot(facs, energies)
 

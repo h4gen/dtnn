@@ -94,11 +94,13 @@ class DTNN(Model):
         #embedding 
         # skip on predict        
         I = np.eye(self.max_z).astype(np.float32)
+#        I[:] = 0
         ZZ = tf.nn.embedding_lookup(I, Z)
         r = tf.sqrt(1. / tf.sqrt(float(self.n_basis)))
         
         #new forward pass here
         # alchemical numbers
+
         
         
         X = L.dense(ZZ, self.n_basis, use_bias=False, # replace ZZ 
