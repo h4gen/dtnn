@@ -48,25 +48,25 @@ y = model_output['y']
 with tf.Session() as sess:
     model.restore(sess)
     g = tf.get_default_graph()
-    with g.gradient_override_map({"Tile": "TileDense"}):
-        U0_p = []
-        molecule_copy = molecule0.copy()
-        feed_dict = {
-            features['numbers']:
-                np.array(molecule_copy.numbers).astype(np.int64),
-            features['positions']:
-                np.array(molecule_copy.positions).astype(np.float32),
-            features['line_vec']:
-                np.array(r_vec[:,na].T).astype(np.float32),
-            features['line_fac']:
-                np.array([1e-3])[:,na].astype(np.float32)
-                }  
-            
-        for n in range(20):
-            U0_p.append(sess.run(y, feed_dict=feed_dict))
-            ret = tf.gradients(y, features['line_fac'])
-            ret = ret[0].eval(session=sess, feed_dict=feed_dict)
-            feed_dict[features['line_fac']] += ret
-            print(ret, U0_p[-1])
+    U0_p = []
+    molecule_copy = molecule0.copy()
+    feed_dict = {
+        features['numbers']:
+            np.array(molecule_copy.numbers).astype(np.int64),
+        features['positions']:
+            np.array(molecule_copy.positions).astype(np.float32),
+        features['line_vec']:
+            np.array(r_vec[:,na].T).astype(np.float32),
+        features['line_fac']:
+            np.array([3])[:,na].astype(np.float32)
+            }  
         
+    for n in range(5):
+        U0_p.append(sess.run(y, feed_dict=feed_dict))
+        with g.gradient_override_map({"Tile": "TileDense"}):
+            ret = tf.gradients(y, features['line_fac'])
+            ret0 = -ret[0].eval(session=sess, feed_dict=feed_dict)
+        feed_dict[features['line_fac']] += ret0
+        print(ret0, U0_p[-1])
+    
         
