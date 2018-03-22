@@ -69,7 +69,7 @@ class DTNN(Model):
         
 
         distances = interatomic_distances(
-            positions2, cell, pbc, self.cutoff
+            positions, cell, pbc, self.cutoff
         )
 
         features['srdf'] = site_rdf(
@@ -78,34 +78,62 @@ class DTNN(Model):
         return features
 
     def _model(self, features):
+#        Zmask = features['zmask']
+#        Hmix = features['Hmix']
+#        Cmix = features['Cmix']
+#        Omix = features['Omix']
         Z = features['numbers']
         C = features['srdf']
+
         # new feature vector alchemical numbers
 
         # masking
+        
+#        ddmask = tf.matmul(Zmask,Zmask, transpose_a=False, transpose_b=True) ## values are squared. Give roots of mixes
+#        ddmask = tf.reduce_sum(ddmask, axis=0)
+#        ddmask = tf.expand_dims(Zmask, 1) * tf.expand_dims(Zmask, 2)
+        
+#        diag = tf.matrix_diag_part(ddmask)
+#        diag = tf.ones_like(diag)
+#        offdiag = 1 - tf.matrix_diag(diag)
+#        dmask = ddmask * offdiag
+#        dmask = tf.expand_dims(dmask, -1)
+#        self.dmask = ddmask
+        
         mask = tf.cast(tf.expand_dims(Z, 1) * tf.expand_dims(Z, 2),
                        tf.float32)
         diag = tf.matrix_diag_part(mask)
         diag = tf.ones_like(diag)
         offdiag = 1 - tf.matrix_diag(diag)
         mask *= offdiag
-        mask = tf.expand_dims(mask, -1)
+        dmask = tf.expand_dims(mask, -1)
 
+
+        
         #embedding 
-        # skip on predict        
         I = np.eye(self.max_z).astype(np.float32)
-#        I[:] = 0
+
+            
         ZZ = tf.nn.embedding_lookup(I, Z)
         r = tf.sqrt(1. / tf.sqrt(float(self.n_basis)))
         
         #new forward pass here
         # alchemical numbers
-
+#        ZZ = tf.concat((
+#                tf.zeros(shape=(19,1)),
+#                Hmix[0],
+#                tf.zeros(shape=(19,4)),
+#                Cmix[0],
+#                tf.zeros(shape=(19,1)),
+#                Omix[0],
+#                tf.zeros(shape=(19,11)),
+#                ), axis=1)
         
         
         X = L.dense(ZZ, self.n_basis, use_bias=False, # replace ZZ 
                     weight_init=tf.random_normal_initializer(stddev=r))
 
+        
         for i in range(self.n_interactions):
                         
             tmp = tf.expand_dims(X, 1)
@@ -118,14 +146,15 @@ class DTNN(Model):
             
             fVj = fX * fCC 
 
-            Vjj = L.masked_sum(fVj, mask, axes=2) 
+            Vjj = L.masked_sum(fVj, dmask, axes=2) 
             
             Vj = L.dense(Vjj, self.n_basis, use_bias=False,
-                         nonlinearity=ssp) # atom wise with ssp
+                         nonlinearity=ssp) 
             
-            V = L.dense(Vj, self.n_basis, use_bias=False) # atom wise 
+            V = L.dense(Vj, self.n_basis, use_bias=False) 
 
             X += V
+        self.fCC = fVj
 
         # output
         o1 = L.dense(X, self.n_basis // 2, nonlinearity=ssp)
@@ -142,13 +171,13 @@ class DTNN(Model):
                               trainable=False)
         yi = yi * std + mu
 
-        if self.atom_ref is not None:
-            E0i = L.embedding(Z, 100, 1,
-                              reference=self.atom_ref, trainable=False)
-            yi += E0i
-
+#        if self.atom_ref is not None:
+#            E0i = L.embedding(Zmask, 100, 1,
+#                              reference=self.atom_ref, trainable=False)
+#            yi += E0i
         atom_mask = tf.expand_dims(Z, -1)
         if self.per_atom:
+            assert False
             y = L.masked_mean(yi, atom_mask, axes=1)
             #E0 = L.masked_mean(E0i, atom_mask, axes=1)
         else:

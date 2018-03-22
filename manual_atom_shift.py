@@ -37,7 +37,9 @@ features = {
     'line_vec': tf.placeholder(tf.float32, shape=(1,3)),
     'atom_nr' : np.asarray(16, dtype=np.int32),
     'cell': np.eye(3).astype(np.float32),
-    'pbc': np.zeros((3,)).astype(np.int64)
+    'pbc': np.zeros((3,)).astype(np.int64),
+    'fade' : np.asarray(0, dtype=np.int32),
+    'atom_type_nr' : np.asarray(0, dtype=np.int32)
 }
 
 model = DTNN(model_dir)
@@ -51,7 +53,7 @@ gamma =.5
 mix_vec = np.zeros(molecule0.numbers.max())
 mix_vec[np.array(list(set(molecule0.numbers)))-1] = [alpha, beta, gamma]
 #%%
-facs = np.linspace(0,4,1000)
+facs = np.linspace(0,4,10)
 energies = get_shifted_atom_energies(model, molecule0, 16, facs, r_vec)
 plt.plot(facs, energies)
 
