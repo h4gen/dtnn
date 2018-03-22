@@ -36,7 +36,9 @@ features = {
     'line_vec': tf.placeholder(tf.float32, shape=(1,3)),
     'atom_nr' : np.asarray(16, dtype=np.int32),
     'cell': np.eye(3).astype(np.float32),
-    'pbc': np.zeros((3,)).astype(np.int64)
+    'pbc': np.zeros((3,)).astype(np.int64),
+    'fade' : np.asarray(0, dtype=np.int32),
+    'atom_type_nr': np.asarray(1, dtype=np.int32)
 }
 
 model = DTNN(model_dir)
@@ -58,13 +60,14 @@ with tf.Session() as sess:
         features['line_vec']:
             np.array(r_vec[:,na].T).astype(np.float32),
         features['line_fac']:
-            np.array([3])[:,na].astype(np.float32)
+            np.array([0])[:,na].astype(np.float32)
             }  
         
     for n in range(5):
+        check_op = tf.add_check_numerics_ops()
         U0_p.append(sess.run(y, feed_dict=feed_dict))
         with g.gradient_override_map({"Tile": "TileDense"}):
-            ret = tf.gradients(y, features['line_fac'])
+            ret = tf.gradients(tf.reduce_sum(y), features['line_fac'])
             ret0 = -ret[0].eval(session=sess, feed_dict=feed_dict)
         feed_dict[features['line_fac']] += ret0
         print(ret0, U0_p[-1])

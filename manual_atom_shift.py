@@ -33,6 +33,7 @@ r_vec /= np.linalg.norm(r_vec)
 features = {
     'positions': tf.placeholder(tf.float32, shape=(None, 3)),
     'numbers': tf.placeholder(tf.int64, shape=(None,)),
+    'zmask' : tf.placeholder(tf.float32, shape=(None,)),
     'line_fac': tf.placeholder(tf.float32, shape=(1,1)),
     'line_vec': tf.placeholder(tf.float32, shape=(1,3)),
     'atom_nr' : np.asarray(16, dtype=np.int32),
@@ -48,7 +49,7 @@ model = DTNN(model_dir)
 model_output = model.get_output(features, is_training=False)
 y = model_output['y']
 
-#%%    
+#%%
 Hmix = np.zeros(shape=(19,1))
 Hmix[np.where( molecule0.numbers == 1)] = 1
 Cmix = np.zeros(shape=(19,1))
@@ -67,9 +68,9 @@ def get_shifted_atom_energies(model, molecule, atom_nr, linspace, r_vec):
         U0_p = []
         molecule_copy = molecule.copy()
         for fac in linspace:
-            
+
 #            molecule_copy.positions[atom_nr] = molecule.positions[atom_nr] + fac * r_vec
-            
+
             feed_dict = {
             features['numbers']:
                 np.array(molecule_copy.numbers).astype(np.int64),
@@ -78,6 +79,7 @@ def get_shifted_atom_energies(model, molecule, atom_nr, linspace, r_vec):
             features['line_vec']:
                 np.array(r_vec[:,na].T).astype(np.float32),
             features['line_fac']:
+<<<<<<< HEAD
                 np.array([fac])[:,na].astype(np.float32),
             features['zmask']:
                 np.array((molecule0.numbers > 0).astype(np.float32)),
@@ -87,7 +89,12 @@ def get_shifted_atom_energies(model, molecule, atom_nr, linspace, r_vec):
                 Cmix,
             features['Omix']:
                 Omix
-                }  
+=======
+                np.array([0])[:,na].astype(np.float32),
+            features['zmask']:
+                np.ones(19).astype(np.float32),
+>>>>>>> master
+                }
             U0_p.append(sess.run(y, feed_dict=feed_dict))
 #            ret = tf.gradients(y, features['line_fac'])[0]
 #            linegrad = -ret.eval(session=sess, feed_dict=feed_dict)
@@ -115,13 +122,13 @@ feed_dict = {
             Cmix,
         features['Omix']:
             Omix
-            }  
+            }
 with tf.Session() as sess:
 #    sess.run(y, feed_dict=feed_dict)
 #    ret = tf.gradients(y, features['line_fac'])[0]
     linegrad = model.debug.eval(session=sess, feed_dict=feed_dict)
     print()
-    
+
 #%%
 from scipy.signal import argrelextrema
 
