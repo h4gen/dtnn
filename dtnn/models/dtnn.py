@@ -68,7 +68,7 @@ class DTNN(Model):
         tmp2 = line_fac * line_vec
         tmp3 = tmp + tmp2
         positions2 = tf.concat((positions[:atom_nr], tmp3, positions[atom_nr+1:]), axis=0)
-        positions = positions2 
+#        positions = positions2 
         ##
         
         distances = interatomic_distances(
