@@ -59,6 +59,8 @@ class DTNN(Model):
         positions = features['positions']
         pbc = features['pbc']
         cell = features['cell']
+        
+        ##
         line_fac = features['line_fac']
         line_vec = features['line_vec']
         atom_nr = features['atom_nr']
@@ -66,10 +68,11 @@ class DTNN(Model):
         tmp2 = line_fac * line_vec
         tmp3 = tmp + tmp2
         positions2 = tf.concat((positions[:atom_nr], tmp3, positions[atom_nr+1:]), axis=0)
+        positions = positions2 
+        ##
         
-        self.debug = positions2
         distances = interatomic_distances(
-            positions2, cell, pbc, self.cutoff
+            positions, cell, pbc, self.cutoff
         )
         
         features['srdf'] = site_rdf(
@@ -81,9 +84,9 @@ class DTNN(Model):
         Z = features['numbers']
         C = features['srdf']
         zmask = features['zmask']
-#        Hmix = features['Hmix']
-#        Cmix = features['Cmix']
-#        Omix = features['Omix']
+        Hmix = features['Hmix']
+        Cmix = features['Cmix']
+        Omix = features['Omix']
      
         # new feature vector alchemical numbers
 
@@ -98,24 +101,23 @@ class DTNN(Model):
 
         #embedding 
         # skip on predict        
-        I = np.eye(self.max_z).astype(np.float32)
-#        I[:] = 0
-        ZZ = tf.nn.embedding_lookup(I, Z)
-        r = tf.sqrt(1. / tf.sqrt(float(self.n_basis)))
+#        I = np.eye(self.max_z).astype(np.float32)
+#        ZZ = tf.nn.embedding_lookup(I, Z)
         
         #new forward pass here
         # alchemical numbers
-#        ZZ = tf.concat((
-#                tf.zeros(shape=(19,1)),
-#                Hmix[0],
-#                tf.zeros(shape=(19,4)),
-#                Cmix[0],
-#                tf.zeros(shape=(19,1)),
-#                Omix[0],
-#                tf.zeros(shape=(19,11)),
-#                ), axis=1)
-
-        
+        ZZ = tf.concat((
+                tf.zeros(shape=(19,1)),
+                Hmix[0],
+                tf.zeros(shape=(19,4)),
+                Cmix[0],
+                tf.zeros(shape=(19,1)),
+                Omix[0],
+                tf.zeros(shape=(19,11)),
+                ), axis=1)
+        ZZ = tf.expand_dims(ZZ, 0)
+        self.debug = ZZ
+        r = tf.sqrt(1. / tf.sqrt(float(self.n_basis)))
         X = L.dense(ZZ, self.n_basis, use_bias=False, # replace ZZ 
                     weight_init=tf.random_normal_initializer(stddev=r))
 
