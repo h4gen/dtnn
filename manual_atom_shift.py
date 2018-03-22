@@ -33,6 +33,7 @@ r_vec /= np.linalg.norm(r_vec)
 features = {
     'positions': tf.placeholder(tf.float32, shape=(None, 3)),
     'numbers': tf.placeholder(tf.int64, shape=(None,)),
+    'zmask' : tf.placeholder(tf.float32, shape=(None,)),
     'line_fac': tf.placeholder(tf.float32, shape=(1,1)),
     'line_vec': tf.placeholder(tf.float32, shape=(1,3)),
     'atom_nr' : np.asarray(16, dtype=np.int32),
@@ -53,7 +54,7 @@ gamma =.5
 mix_vec = np.zeros(molecule0.numbers.max())
 mix_vec[np.array(list(set(molecule0.numbers)))-1] = [alpha, beta, gamma]
 #%%
-facs = np.linspace(0,4,10)
+facs = np.linspace(0,4,100)
 energies = get_shifted_atom_energies(model, molecule0, 16, facs, r_vec)
 plt.plot(facs, energies)
 
@@ -88,7 +89,9 @@ def get_shifted_atom_energies(model, molecule, atom_nr, linspace, r_vec):
             features['line_vec']:
                 np.array(r_vec[:,na].T).astype(np.float32),
             features['line_fac']:
-                np.array([0])[:,na].astype(np.float32)
+                np.array([0])[:,na].astype(np.float32),
+            features['zmask']:
+                np.ones(19).astype(np.float32),
                 }  
             print(feed_dict[features['positions']][atom_nr])
             U0_p.append(sess.run(y, feed_dict=feed_dict))

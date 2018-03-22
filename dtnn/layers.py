@@ -98,7 +98,7 @@ def masked_reduce(x, mask=None, axes=None,
     with tf.variable_scope(scope, default_name=name,
                            values=scope_vars) as scope:
         if mask is not None:
-            mask = tf.cast(mask, tf.float32)
+#            mask = tf.cast(mask, tf.float32)
             x *= mask
 
         y = reduce_op(x, axes, keep_dims)

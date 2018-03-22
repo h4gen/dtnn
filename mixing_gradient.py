@@ -32,7 +32,7 @@ features = {
     'numbers': tf.placeholder(tf.int32, shape=(None,)),
     'cell': np.eye(3).astype(np.float32),
     'pbc': np.zeros((3,)).astype(np.int64),
-    'zmask': tf.placeholder(tf.float32, shape=(19,1)),
+    'zmask': tf.placeholder(tf.float32, shape=(None,)),
     'Hmix' : tf.placeholder(tf.float32, shape=(19,1)),
     'Cmix' : tf.placeholder(tf.float32, shape=(19,1)),
     'Omix' : tf.placeholder(tf.float32, shape=(19,1)),
@@ -69,7 +69,7 @@ with tf.Session() as sess:
         features['positions']:
             np.array(molecule_copy.positions).astype(np.float32),
         features['zmask']:
-            np.ones((19,1)).astype(np.float32),
+            np.ones(19).astype(np.float32),
         features['Hmix']:
             Hmix,
         features['Cmix']:

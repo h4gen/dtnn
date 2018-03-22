@@ -78,7 +78,7 @@ class DTNN(Model):
         return features
 
     def _model(self, features):
-#        Zmask = features['zmask']
+        Zmask = features['zmask']
 #        Hmix = features['Hmix']
 #        Cmix = features['Cmix']
 #        Omix = features['Omix']
@@ -175,7 +175,7 @@ class DTNN(Model):
 #            E0i = L.embedding(Zmask, 100, 1,
 #                              reference=self.atom_ref, trainable=False)
 #            yi += E0i
-        atom_mask = tf.expand_dims(Z, -1)
+        atom_mask = tf.expand_dims(Zmask, -1)
         if self.per_atom:
             assert False
             y = L.masked_mean(yi, atom_mask, axes=1)
