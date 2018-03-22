@@ -38,7 +38,7 @@ features = {
     'atom_nr' : np.asarray(16, dtype=np.int32),
     'cell': np.eye(3).astype(np.float32),
     'pbc': np.zeros((3,)).astype(np.int64),
-    'zmask' : tf.placeholder(tf.float32, shape=(None,1)),
+    'zmask' : tf.placeholder(tf.float32, shape=(None,)),
 }
 
 model = DTNN(model_dir)
@@ -52,7 +52,7 @@ gamma =.5
 mix_vec = np.zeros(molecule0.numbers.max())
 mix_vec[np.array(list(set(molecule0.numbers)))-1] = [alpha, beta, gamma]
 #%%
-facs = np.linspace(0,4,1000)
+facs = np.linspace(0,4,100)
 energies = get_shifted_atom_energies(model, molecule0, 16, facs, r_vec)
 plt.plot(facs, energies)
 
@@ -89,9 +89,14 @@ def get_shifted_atom_energies(model, molecule, atom_nr, linspace, r_vec):
             features['line_fac']:
                 np.array([fac])[:,na].astype(np.float32),
             features['zmask']:
-                np.array((molecule0.numbers > 0).astype(np.float32))[:,na]
+                np.array((molecule0.numbers > 0).astype(np.float32))
                 }  
             U0_p.append(sess.run(y, feed_dict=feed_dict))
+#            ret = tf.gradients(y, features['line_fac'])[0]
+#            linegrad = -ret.eval(session=sess, feed_dict=feed_dict)
+#            retDB = tf.gradients(tf.reduce_sum(y), [model.debug])[0]
+#            dbgrad = -retDB.eval(session=sess, feed_dict=feed_dict)
+#            print(dbgrad)
     return np.asarray(U0_p).ravel()
 
 #%%
@@ -105,11 +110,10 @@ feed_dict = {
         features['line_fac']:
             np.array([1])[:,na].astype(np.float32),
         features['zmask']:
-            np.array((molecule0.numbers > 0).astype(np.float32))[:,na]
+            np.array((molecule0.numbers > 0).astype(np.float32))
             }  
 with tf.Session() as sess:
     sess.run(y, feed_dict=feed_dict)
-    g = tf.get_default_graph()
     ret = tf.gradients(y, features['line_fac'])[0]
     linegrad = -ret.eval(session=sess, feed_dict=feed_dict)
     print(ret)

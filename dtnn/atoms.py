@@ -43,10 +43,13 @@ def interatomic_distances(positions, cell, pbc, cutoff):
         rpos = positions + offset
         rpos = tf.expand_dims(rpos, 0)
         positions = tf.expand_dims(positions, 1)
-
-        euclid_dist = tf.sqrt(
-            tf.reduce_sum(tf.square(positions - rpos),
-                          reduction_indices=3))
+        Rij = positions - rpos
+        dist = tf.reduce_sum(tf.square(Rij),reduction_indices=3)
+        dshape = tf.shape(dist)
+        #Reduce last I Axis for fiiting axes
+        L = tf.eye(num_rows=dshape[-1])* tf.constant(1e-10, dtype=tf.float32)
+        dist += L
+        euclid_dist = tf.sqrt(tf.nn.relu(dist))
         return euclid_dist
 
 

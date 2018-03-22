@@ -67,11 +67,11 @@ class DTNN(Model):
         tmp3 = tmp + tmp2
         positions2 = tf.concat((positions[:atom_nr], tmp3, positions[atom_nr+1:]), axis=0)
         
-
+        self.debug = positions2
         distances = interatomic_distances(
             positions2, cell, pbc, self.cutoff
         )
-
+        
         features['srdf'] = site_rdf(
             distances, self.cutoff, self.rdf_spacing, 1.
         )
@@ -81,6 +81,10 @@ class DTNN(Model):
         Z = features['numbers']
         C = features['srdf']
         zmask = features['zmask']
+#        Hmix = features['Hmix']
+#        Cmix = features['Cmix']
+#        Omix = features['Omix']
+     
         # new feature vector alchemical numbers
 
         # masking
@@ -101,8 +105,16 @@ class DTNN(Model):
         
         #new forward pass here
         # alchemical numbers
+#        ZZ = tf.concat((
+#                tf.zeros(shape=(19,1)),
+#                Hmix[0],
+#                tf.zeros(shape=(19,4)),
+#                Cmix[0],
+#                tf.zeros(shape=(19,1)),
+#                Omix[0],
+#                tf.zeros(shape=(19,11)),
+#                ), axis=1)
 
-        
         
         X = L.dense(ZZ, self.n_basis, use_bias=False, # replace ZZ 
                     weight_init=tf.random_normal_initializer(stddev=r))
@@ -134,7 +146,7 @@ class DTNN(Model):
                      weight_init=tf.constant_initializer(0.0),
                      use_bias=True)
         
-
+        
         mu = tf.get_variable('mu', shape=(1,),
                              initializer=L.reference_initializer(self.mu),
                              trainable=False)
@@ -148,12 +160,12 @@ class DTNN(Model):
                               reference=self.atom_ref, trainable=False)
             yi += E0i
 
-#        atom_mask = tf.expand_dims(Z, -1)
+        atom_mask = tf.expand_dims(zmask, -1)
         if self.per_atom:
-            y = L.masked_mean(yi, zmask, axes=1)
+            y = L.masked_mean(yi, atom_mask, axes=1)
             #E0 = L.masked_mean(E0i, atom_mask, axes=1)
         else:
-            y = L.masked_sum(yi, zmask, axes=1)
+            y = L.masked_sum(yi, atom_mask, axes=1)
             #E0 = L.masked_sum(E0i, atom_mask, axes=1)
 
         return {'y': y, 'y_i': yi} #, 'E0': E0}
