@@ -37,7 +37,8 @@ features = {
     'line_vec': tf.placeholder(tf.float32, shape=(1,3)),
     'atom_nr' : np.asarray(16, dtype=np.int32),
     'cell': np.eye(3).astype(np.float32),
-    'pbc': np.zeros((3,)).astype(np.int64)
+    'pbc': np.zeros((3,)).astype(np.int64),
+    'zmask' : tf.placeholder(tf.float32, shape=(None,1)),
 }
 
 model = DTNN(model_dir)
@@ -76,7 +77,7 @@ def get_shifted_atom_energies(model, molecule, atom_nr, linspace, r_vec):
         molecule_copy = molecule.copy()
         for fac in linspace:
             
-            molecule_copy.positions[atom_nr] = molecule.positions[atom_nr] + fac * r_vec
+#            molecule_copy.positions[atom_nr] = molecule.positions[atom_nr] + fac * r_vec
             
             feed_dict = {
             features['numbers']:
@@ -86,15 +87,29 @@ def get_shifted_atom_energies(model, molecule, atom_nr, linspace, r_vec):
             features['line_vec']:
                 np.array(r_vec[:,na].T).astype(np.float32),
             features['line_fac']:
-                np.array([0])[:,na].astype(np.float32)
+                np.array([fac])[:,na].astype(np.float32),
+            features['zmask']:
+                np.array((molecule0.numbers > 0).astype(np.float32))[:,na]
                 }  
-            print(feed_dict[features['positions']][atom_nr])
             U0_p.append(sess.run(y, feed_dict=feed_dict))
     return np.asarray(U0_p).ravel()
 
-
-
-#        g = tf.get_default_graph()
-#        with g.gradient_override_map({"Tile": "TileDense"}):
-#            ret = tf.gradients(y, features['positions'])
-#        print(ret)
+#%%
+feed_dict = {
+        features['numbers']:
+            np.array(molecule0.numbers).astype(np.int64),
+        features['positions']:
+            np.array(molecule0.positions).astype(np.float32),
+        features['line_vec']:
+            np.array(r_vec[:,na].T).astype(np.float32),
+        features['line_fac']:
+            np.array([1])[:,na].astype(np.float32),
+        features['zmask']:
+            np.array((molecule0.numbers > 0).astype(np.float32))[:,na]
+            }  
+with tf.Session() as sess:
+    sess.run(y, feed_dict=feed_dict)
+    g = tf.get_default_graph()
+    ret = tf.gradients(y, features['line_fac'])[0]
+    linegrad = -ret.eval(session=sess, feed_dict=feed_dict)
+    print(ret)

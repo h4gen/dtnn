@@ -80,6 +80,7 @@ class DTNN(Model):
     def _model(self, features):
         Z = features['numbers']
         C = features['srdf']
+        zmask = features['zmask']
         # new feature vector alchemical numbers
 
         # masking
@@ -147,12 +148,12 @@ class DTNN(Model):
                               reference=self.atom_ref, trainable=False)
             yi += E0i
 
-        atom_mask = tf.expand_dims(Z, -1)
+#        atom_mask = tf.expand_dims(Z, -1)
         if self.per_atom:
-            y = L.masked_mean(yi, atom_mask, axes=1)
+            y = L.masked_mean(yi, zmask, axes=1)
             #E0 = L.masked_mean(E0i, atom_mask, axes=1)
         else:
-            y = L.masked_sum(yi, atom_mask, axes=1)
+            y = L.masked_sum(yi, zmask, axes=1)
             #E0 = L.masked_sum(E0i, atom_mask, axes=1)
 
         return {'y': y, 'y_i': yi} #, 'E0': E0}
