@@ -16,8 +16,8 @@ from ase.io import read
 from ase import Atoms
 import copy
 from dtnn.models import DTNN
-from plot_molecule import plot_mol
-from scale import scale_matrix, clip_gradients, save_mol2
+#from plot_molecule import plot_mol
+from scale import scale_matrix, save_mol2
 import glob
 import random
 import datetime
