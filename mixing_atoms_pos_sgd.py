@@ -145,10 +145,10 @@ with tf.Session() as sess:
 
             meta_mol.write(directory + '/' + 'meta_mol'+str(n)+'.xyz')
 #                save_mol2(meta_mol, 'meta_mol' +str(n))
-            plt.figure()
-            plt.plot( np.array( U0_p).ravel())
-            plt.savefig(directory + '/' + str(n))
-            plt.show()
+#            plt.figure()
+#            plt.plot( np.array( U0_p).ravel())
+#            plt.savefig(directory + '/' + str(n))
+#            plt.show()
             with open(directory + '/' + 'energies.pkl', 'wb') as file:
                 pickle.dump(U0_p, file)
 
