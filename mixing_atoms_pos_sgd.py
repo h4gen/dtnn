@@ -74,7 +74,7 @@ meta_mol_mix = scale_matrix(meta_mol_mix, np.array([10,7,2]), np.ones((19,1)))
 meta_mol_pos = np.random.uniform(low=-3, high=3, size=molecule0.positions.shape)
 col_nums = np.array([1,6,8])
 meta_mol = Atoms( positions=meta_mol_pos, numbers=(meta_mol_mix * col_nums.T).sum( axis=1).round() )
-save_mol2(meta_mol, 'test')
+#save_mol2(meta_mol, 'test')
 #%%
 P_eta = 1e-3
 M_eta = 1e-3
