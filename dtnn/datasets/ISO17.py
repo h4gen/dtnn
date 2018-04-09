@@ -50,7 +50,7 @@ def load_data(dbpath):
     url = 'http://quantum-machine.org/datasets/iso17.tar.gz'
 
     try:
-        urllib.request.urlretrieve(url)
+        urllib.request.urlretrieve(url,tar_path)
         logging.info("Done.")
     except HTTPError as e:
         logging.error("HTTP Error:", e.code, url)

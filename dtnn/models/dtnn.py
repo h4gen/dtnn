@@ -7,6 +7,45 @@ from ..core import Model
 
 def ssp(x):
     return tf.nn.softplus(x) + np.log(.5)
+
+import tensorflow as tf
+
+
+def pdist(r):
+    p1 = tf.expand_dims(r, 1)
+    p2 = tf.expand_dims(r, 2)
+    Rij = p1 - p2
+    Dij2 = tf.reduce_sum(Rij ** 2, -1)
+    dshape = tf.shape(Dij2)
+    Dij2 += tf.eye(num_rows=dshape[1], batch_shape=[dshape[0]])
+    Dij = tf.sqrt(tf.nn.relu(Dij2))
+    Dij = tf.expand_dims(Dij, -1)
+    return Dij
+
+
+class RBFExpansion:
+    def __init__(self, dim, cutoff, gap, lower_cutoff=0., name=None):
+        self.cutoff = cutoff
+        self.gap = gap
+        self.dim = dim
+        xrange = cutoff - lower_cutoff
+        self.centers = np.linspace(lower_cutoff, self.cutoff,
+                                   int(np.ceil(xrange / self.gap)))
+        self.n_centers = len(self.centers)
+        self.fan_out = self.dim * self.n_centers
+
+
+    def forward(self, d):
+        cshape = tf.shape(d)
+        CS = d.get_shape()
+        centers = self.centers.reshape((1, 1, 1, 1, -1)).astype(np.float32)
+        d = tf.expand_dims(d, -1) - tf.constant(centers)
+        rbf = tf.exp(-(d ** 2) / self.gap)
+        rbf = tf.reshape(rbf, (
+            cshape[0], cshape[1], cshape[2],
+            self.dim * centers.shape[-1]))
+        rbf.set_shape([CS[0], CS[1], CS[2], self.dim * self.n_centers])
+        return rbf
     
 
 
@@ -54,39 +93,49 @@ class DTNN(Model):
             n_interactions=n_interactions, max_z=max_atomic_number,
             mu=mu, std=std, atom_ref=atom_ref
         )
+        self.rbf = RBFExpansion(dim=1, cutoff=cutoff, gap=rdf_spacing)
 
+    
     def _preprocessor(self, features):
-        positions = features['positions']
-        pbc = features['pbc']
-        cell = features['cell']
-        
-        ##
-        line_fac = features['line_fac']
-        line_vec = features['line_vec']
-        atom_nr = features['atom_nr']
-        tmp = positions[atom_nr,:]
-        tmp2 = line_fac * line_vec
-        tmp3 = tmp + tmp2
-        positions2 = tf.concat((positions[:atom_nr], tmp3, positions[atom_nr+1:]), axis=0)
+#        positions = features['positions']
+#        pbc = features['pbc']
+#        cell = features['cell']
+#        
+#        ##
+#        line_fac = features['line_fac']
+#        line_vec = features['line_vec']
+#        atom_nr = features['atom_nr']
+#        tmp = positions[atom_nr,:]
+#        tmp2 = line_fac * line_vec
+#        tmp3 = tmp + tmp2
+#        positions2 = tf.concat((positions[:atom_nr], tmp3, positions[atom_nr+1:]), axis=0)
+#        features['positions2'] = positions2
 #        positions = positions2 
         ##
         
-        distances = interatomic_distances(
-            positions, cell, pbc, self.cutoff
-        )
-        
-        features['srdf'] = site_rdf(
-            distances, self.cutoff, self.rdf_spacing, 1.
-        )
+#        distances = interatomic_distances(
+#            positions, cell, pbc, self.cutoff
+#        )
+#        self.d1 = distances
+#        
+#        features['srdf'] = site_rdf(
+#            distances, self.cutoff, self.rdf_spacing, 1.
+#        )
         return features
 
     def _model(self, features):
         Z = features['numbers']
-        C = features['srdf']
-        zmask = features['zmask']
-        Hmix = features['Hmix']
-        Cmix = features['Cmix']
-        Omix = features['Omix']
+#        C = features['srdf']
+#        self.c1 = C.get_shape()
+        positions = features['positions']
+#        self.posshape = positions
+        dist = pdist(positions)
+#        self.d2 = dist
+        C = self.rbf.forward(dist)
+#        self.c2 = C.get_shape()
+        
+        
+        zmask = np.ones(19)#features['zmask']
      
         # new feature vector alchemical numbers
 
@@ -100,23 +149,29 @@ class DTNN(Model):
         mask = tf.expand_dims(mask, -1)
 
         #embedding 
-        # skip on predict        
-#        I = np.eye(self.max_z).astype(np.float32)
-#        ZZ = tf.nn.embedding_lookup(I, Z)
+        # skip on predict     
+#        if features['is_training'] == True:
+        I = np.eye(self.max_z).astype(np.float32)
+        ZZ = tf.nn.embedding_lookup(I, Z)
         
         #new forward pass here
         # alchemical numbers
-        ZZ = tf.concat((
-                tf.zeros(shape=(19,1)),
-                Hmix[0],
-                tf.zeros(shape=(19,4)),
-                Cmix[0],
-                tf.zeros(shape=(19,1)),
-                Omix[0],
-                tf.zeros(shape=(19,11)),
-                ), axis=1)
-        ZZ = tf.expand_dims(ZZ, 0)
-        self.debug = ZZ
+#        elif features['is_training'] == False:  
+#            Hmix = features['Hmix']
+#            Cmix = features['Cmix']
+#            Omix = features['Omix']
+#            ZZ = tf.concat((
+#                    tf.zeros(shape=(19,1)),
+#                    Hmix[0],
+#                    tf.zeros(shape=(19,4)),
+#                    Cmix[0],
+#                    tf.zeros(shape=(19,1)),
+#                    Omix[0],
+#                    tf.zeros(shape=(19,11)),
+#                    ), axis=1)
+#            ZZ = tf.expand_dims(ZZ, 0)
+        
+#        self.debug = ZZ
         r = tf.sqrt(1. / tf.sqrt(float(self.n_basis)))
         X = L.dense(ZZ, self.n_basis, use_bias=False, # replace ZZ 
                     weight_init=tf.random_normal_initializer(stddev=r))
@@ -169,5 +224,6 @@ class DTNN(Model):
         else:
             y = L.masked_sum(yi, atom_mask, axes=1)
             #E0 = L.masked_sum(E0i, atom_mask, axes=1)
+        
 
-        return {'y': y, 'y_i': yi} #, 'E0': E0}
+        return {'y': y, 'y_i': yi}#, 'f': f} #, 'E0': E0}

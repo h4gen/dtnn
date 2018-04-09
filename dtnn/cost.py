@@ -49,6 +49,34 @@ class L2Loss(CostFunction):
 
     def aggregate(self, errors):
         return tf.reduce_sum(errors)
+    
+class PosL2Loss(CostFunction):
+    def __init__(self, prediction, target, ftarget, rho=0.01, idx=None, name='MSE'):
+        super(PosL2Loss, self).__init__(name)
+        self.prediction = prediction
+        self.target = target
+        self.ftarget = ftarget
+        self.idx = idx
+        self.rho = rho
+
+    def calc_errors(self, output):
+        tgt = output[self.target]
+        ftgt = output[self.ftarget]
+        pred = output[self.prediction]
+        f = -tf.gradients(tf.reduce_sum(pred), output['positions'])[0]
+        
+        print(f.get_shape(), ftgt.get_shape())
+        print(tgt.get_shape(), pred.get_shape())
+#        if self.idx is not None:
+#            tgt = tgt[:, self.idx]
+#            pred = pred[:, self.idx]
+        eloss = (tgt - pred) ** 2
+        floss = (ftgt-f)**2
+        return eloss, floss
+
+    def aggregate(self, errors):
+        eloss, floss = errors
+        return tf.reduce_sum(eloss) * self.rho + tf.reduce_sum(floss)
 
 
 class MeanSquaredError(CostFunction):
