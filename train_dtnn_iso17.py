@@ -105,13 +105,12 @@ def main(args):
 #                     atom_ref=e_atom,
                      n_factors=args.factors,
                      cutoff=args.cutoff)
-    grad = tf.gradients
 
     # setup cost functions
-    cost_fcn = cost.PosL2Loss(prediction='y', target='total_energy', ftarget='atomic_forces', grad=grad)
+    cost_fcn = cost.PosL2Loss(prediction='y', target='total_energy', ftarget='atomic_forces')
     additional_cost_fcns = [
         cost.MeanAbsoluteError(prediction='y', target='total_energy', name='total_energy_MAE'),
-        cost.ForceMeanAbsoluteError(prediction='y', target='atomic_forces', name='atomic_forces_MAE', grad=grad),
+        cost.ForceMeanAbsoluteError(prediction='y', target='atomic_forces', name='atomic_forces_MAE'),
         cost.RootMeanSquaredError(prediction='y', target='total_energy', name='total_energy_RMSE'),
         cost.PAMeanAbsoluteError(prediction='y', target='total_energy',
                                  name='total_energy_MAE_atom'),

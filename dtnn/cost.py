@@ -32,17 +32,16 @@ class MeanAbsoluteError(CostFunction):
         return tf.abs(tgt - pred)
     
 class ForceMeanAbsoluteError(CostFunction):
-    def __init__(self, prediction, target, grad, idx=None, name='MAE'):
+    def __init__(self, prediction, target, idx=None, name='MAE'):
         super(ForceMeanAbsoluteError, self).__init__(name)
         self.prediction = prediction
         self.target = target
         self.idx = idx
-        self.grad = grad
 
     def calc_errors(self, output):
         tgt = output[self.target]
         pred = output[self.prediction]
-        f = -self.grad(tf.reduce_sum(pred), output['positions'])[0]
+        f = -tf.gradients(tf.reduce_sum(pred), output['positions'])[0]
 #        if self.idx is not None:
 #            tgt = tgt[:, self.idx]
 #            pred = pred[:, self.idx]
@@ -68,20 +67,19 @@ class L2Loss(CostFunction):
         return tf.reduce_sum(errors)
     
 class PosL2Loss(CostFunction):
-    def __init__(self, prediction, target, ftarget, grad, rho=0.01, idx=None, name='MSE'):
+    def __init__(self, prediction, target, ftarget, rho=0.01, idx=None, name='MSE'):
         super(PosL2Loss, self).__init__(name)
         self.prediction = prediction
         self.target = target
         self.ftarget = ftarget
         self.idx = idx
         self.rho = rho
-        self.grad = grad
 
     def calc_errors(self, output):
         tgt = output[self.target]
         ftgt = output[self.ftarget]
         pred = output[self.prediction]
-        f = -self.grad(tf.reduce_sum(pred), output['positions'])[0]
+        f = -tf.gradients(tf.reduce_sum(pred), output['positions'])[0]
         
 #        print(f.get_shape(), ftgt.get_shape())
 #        print(tgt.get_shape(), pred.get_shape())
