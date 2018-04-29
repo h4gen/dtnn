@@ -18,8 +18,8 @@ import copy
 from dtnn.models import DTNN
 
 #%%
-model_dir='output/DTNN_64_64_3_20.0_split_1'
-split_dir='output/split_1'
+model_dir='output_iso17/DTNN_64_64_3_20.0_split_1'
+split_dir='output_iso17/split_1'
 
 ## Preparing vectors for atom shift
 molecule0 = read('conversion/5779.xyz')
@@ -94,12 +94,12 @@ def get_shifted_atom_energies(model, molecule, atom_nr, linspace, r_vec):
 #            linegrad = -ret.eval(session=sess, feed_dict=feed_dict)
 #            retDB = tf.gradients(tf.reduce_sum(y), [model.debug])[0]
 #            dbgrad = -retDB.eval(session=sess, feed_dict=feed_dict)
-            d1 = model.d1.eval(session=sess, feed_dict=feed_dict)[0]
-            d2 = model.d2.eval(session=sess, feed_dict=feed_dict)[0,0]
-            c1 = model.c1
-            c2 = model.c2
-            pos = model.posshape.eval(session=sess, feed_dict=feed_dict)[0]
-            print('d1', d1,'d2',d2,'c1',c1,'c2',c2,'posshape',pos, d1-d2)
+#            d1 = model.d1.eval(session=sess, feed_dict=feed_dict)[0]
+#            d2 = model.d2.eval(session=sess, feed_dict=feed_dict)[0,0]
+#            c1 = model.c1
+#            c2 = model.c2
+#            pos = model.posshape.eval(session=sess, feed_dict=feed_dict)[0]
+#            print('d1', d1,'d2',d2,'c1',c1,'c2',c2,'posshape',pos, d1-d2)
 
 #            print(linegrad)
     return np.asarray(U0_p).ravel()
