@@ -70,10 +70,13 @@ for i, paramset in enumerate(params_list):
     molecule0.positions = molecule0.positions[ids]
     Hmix = np.zeros(shape=(19,1))
     Hmix[np.where( molecule0.numbers == 1)] = 1
+    Hmix[np.where( molecule0.numbers != 1)] = 0
     Cmix = np.zeros(shape=(19,1))
     Cmix[np.where( molecule0.numbers == 6)] = 1
+    Cmix[np.where( molecule0.numbers != 6)] = 0
     Omix = np.zeros(shape=(19,1))
     Omix[np.where( molecule0.numbers == 8)] = 1
+    Omix[np.where( molecule0.numbers != 8)] = 0
     
     meta_mol_mix = np.hstack((Hmix,Cmix,Omix))
     meta_mol_mix_isospace, meta_mol_numbers_isospace = to_proba_isospace(meta_mol_mix.copy())
