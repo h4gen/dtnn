@@ -174,7 +174,7 @@ for i, paramset in enumerate(params_list):
                 meta_mol_mix[meta_mol_mix>1]=1
                 meta_mol_mix = scale_matrix(meta_mol_mix, np.array([10,7,2]), np.ones((19,1)))
                 meta_mol_numbers_isospace = max_likely_numbers(meta_mol_mix.copy())
-            except:
+            except FloatingPointError:
                 print('Error during numerics. Skipping.')
                 print(meta_mol_mix)
                 break
