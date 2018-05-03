@@ -11,18 +11,13 @@ import os
 import numpy as np
 from numpy import newaxis as na
 import tensorflow as tf
-import matplotlib.pyplot as plt
 from ase.io import read
 from ase import Atoms
-import copy
 from dtnn.models import DTNN
 from sklearn.decomposition import PCA
 #from plot_molecule import plot_mol
 from scale import scale_matrix, save_mol2, L1_Schedule, to_proba_isospace, fix_positions, max_likely_numbers
-import glob
 from sklearn.model_selection import ParameterGrid
-
-import datetime
 import pickle
 from tqdm import tqdm
 from random import shuffle
@@ -31,9 +26,6 @@ from random import shuffle
 #%%
 model_dir='output_iso17_2/DTNN_64_64_3_20.0_split_1'
 #split_dir='output/split_1'
-#timestamp = datetime.datetime.now().strftime("%d_%m_%Y_%H%M")
-
-isomers = glob.glob('conversion/*.xyz')
 
 #%%
 features = {
