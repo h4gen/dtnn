@@ -21,7 +21,7 @@ from sklearn.model_selection import ParameterGrid
 import pickle
 from tqdm import tqdm
 from random import shuffle
-
+np.seterr(all='raise')
 
 #%%
 model_dir='output_iso17_2/DTNN_64_64_3_20.0_split_1'
@@ -61,7 +61,7 @@ shuffle(params_list)
 
 #%%
 
-for paramset in tqdm(params_list):
+for i, paramset in enumerate(params_list):
     
     molecule0 = read('conversion/4928.xyz')
     #all_pos.mean(axis=0)
@@ -93,7 +93,7 @@ for paramset in tqdm(params_list):
     mixing_matrices = []
     regs = []
     
-    print('\nStarting new grid point with ' + str(paramset))
+    print(str(i) + '. Starting new grid point with ' + str(paramset))
     
     directory = 'gridsearch/' + str(paramset)
     if not os.path.exists(directory):
@@ -166,12 +166,14 @@ for paramset in tqdm(params_list):
                 meta_mol_pos = fix_positions(meta_mol_pos, min_dist=MIN_ATOM_DIST, max_dist=MAX_ATOM_DIST)
                 meta_mol_mix += M_eta * np.hstack(( Hgrad, Cgrad, Ograd))
                 if np.any(meta_mol_mix == np.nan) or np.any(meta_mol_mix == np.inf):
-                    print('Invalid values in mixing matrix. Skipping')
+                    print('Invalid values in mixing matrix. Skipping.')
+                    break
                 meta_mol_mix[meta_mol_mix<0]=1e-7
                 meta_mol_mix[meta_mol_mix>1]=1
                 meta_mol_mix = scale_matrix(meta_mol_mix, np.array([10,7,2]), np.ones((19,1)))
                 meta_mol_numbers_isospace = max_likely_numbers(meta_mol_mix.copy())
             except:
+                print('Error during numerics. Skipping.')
                 break
     
             meta_mol = Atoms( positions=meta_mol_pos, numbers=meta_mol_numbers_isospace )
