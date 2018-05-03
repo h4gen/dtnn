@@ -17,7 +17,7 @@ import networkx as nx
 
 def scale_matrix(A, scale_col = np.array([10,7,2]), scale_row = np.ones((19,1))):
     count = 0
-    while not (np.all(np.isclose(A.sum(axis=0), scale_col, rtol=1e-7)) and np.all(np.isclose(A.sum(axis=1), scale_row, rtol=1e-7))):
+    while not (np.all(np.isclose(A.sum(axis=0), scale_col, rtol=1e-4)) and np.all(np.isclose(A.sum(axis=1), scale_row, rtol=1e-8))):
         count += 1
         colsum = A.sum(axis=0)
         A/= colsum
@@ -25,7 +25,7 @@ def scale_matrix(A, scale_col = np.array([10,7,2]), scale_row = np.ones((19,1)))
         rowsum = A.sum(axis=1)[:,na]
         A/= rowsum
         
-        if count> 10000:
+        if count> 100000:
             print('Scale. out of patience')
             raise Exception
 
