@@ -136,7 +136,7 @@ for i, paramset in enumerate(params_list):
                     pickle.dump(regs, file)
                     file.close()
 
-                if n > 2000 and bool((np.abs((np.array(U0_p).ravel()[-1000:-1] - np.array(U0_p).ravel()[-1001:-2]).mean()) < DELTA_MEAN)):
+                if n > 5000 and bool((np.abs((np.array(U0_p).ravel()[-4000:-1] - np.array(U0_p).ravel()[-4001:-2]).mean()) < DELTA_MEAN)):
                     print('Model converged. Stopping...')
                     break
                 
