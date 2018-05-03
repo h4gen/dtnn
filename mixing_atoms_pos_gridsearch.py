@@ -47,13 +47,13 @@ y = model_output['y']
 #l1_list = [tf.concat((features['Hmix'][i], features['Cmix'][i], features['Omix'][i]), axis=0) for i in range(19)]
 #%%
 DELTA_MEAN = 1e-4
-P_eta_list = {'P_eta': [1e-1, 1e-2, 1e-3, 1e-4, 1e-5]}
-M_eta_list = {'M_eta': [1e-1, 1e-2, 1e-3, 1e-4, 1e-5]}
+P_eta_list = {'P_eta': [1e-3]}
+M_eta_list = {'M_eta': [1e-3]}
 cut_list = {'cut': [0, 1e3, 1e4,]}
 div_list = {'div': [1e3, 1e4, 1e5]}
 scale_list = {'scale': {0.2, 0.4, 0.6, 0.8, 1}}
-MAX_ATOM_DIST_list = {'maad': [1.5, 1.7, 1.9, 2.1]}
-MIN_ATOM_DIST_list = {'miad': [.3, .5, .7, .9, 1.1]} 
+MAX_ATOM_DIST_list = {'maad': [1.7]}
+MIN_ATOM_DIST_list = {'miad': [.7]} 
 param_grid = {**P_eta_list, ** M_eta_list, **cut_list, **div_list, **scale_list, **MAX_ATOM_DIST_list, ** MIN_ATOM_DIST_list}
 params_list = list(ParameterGrid(param_grid))
 shuffle(params_list)
