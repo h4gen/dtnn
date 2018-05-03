@@ -16,7 +16,7 @@ import networkx as nx
 
 
 def scale_matrix(A, scale_col = np.array([10,7,2]), scale_row = np.ones((19,1))):
-    while not (np.all(np.isclose(A.sum(axis=0), scale_col, rtol=1e-6)) and np.all(np.isclose(A.sum(axis=1), scale_row, rtol=1e-3))):
+    while not (np.all(np.isclose(A.sum(axis=0), scale_col, rtol=1e-8)) and np.all(np.isclose(A.sum(axis=1), scale_row, rtol=1e-3))):
         
         colsum = A.sum(axis=0)
         A/= colsum
@@ -44,7 +44,7 @@ class L1_Schedule:
         self.scale = scale
     def f(self, x):
         if x < self.cut:
-            return 1e-9
+            return 1e-6
         else:
             arg = (x-self.cut)/self.div
             return self.scale * (arg)/(1+np.abs(arg))
@@ -80,11 +80,12 @@ def fix_positions(mol_pos,eta=.01, max_dist=1.7, min_dist=0.9):
     min_adj = dist + np.diag(np.inf*np.ones(dist.shape[0])) < min_dist
     min_graph = nx.Graph(min_adj)
     min_graphs = list(nx.connected_component_subgraphs(min_graph))
+    counter = 0
     
     while not len(min_graphs) == mol_pos.shape[0]:
-#        print('Min Subgraphs', len(min_graphs))
+        counter += 1
         for subgraph in min_graphs:
-            sub_atoms = list(subgraph.nodes)
+            sub_atoms = list(subgraph.nodes())
             if len(sub_atoms) > 1:
                 sub_center = mol_pos[sub_atoms].mean(axis=0)
                 r_vec = mol_pos[sub_atoms] - sub_center
@@ -94,14 +95,16 @@ def fix_positions(mol_pos,eta=.01, max_dist=1.7, min_dist=0.9):
         min_adj = dist + np.diag(np.inf*np.ones(dist.shape[0])) < min_dist
         min_graph = nx.Graph(min_adj)
         min_graphs = list(nx.connected_component_subgraphs(min_graph))
+        
+        if counter >= 10000:
+            raise Exception()
     
-    
+    counter = 0
     while not len(max_graphs) == 1:
-#        print('Dist Subgraphs', len(max_graphs))
-
-
+        counter += 1
+        counter 
         for subgraph in max_graphs:
-            sub_atoms = list(subgraph.nodes)
+            sub_atoms = list(subgraph.nodes())
             sub_center = mol_pos[sub_atoms].mean(axis=0)
             r_vec = mol_center - sub_center
             mol_pos[sub_atoms] += eta*r_vec
@@ -111,6 +114,8 @@ def fix_positions(mol_pos,eta=.01, max_dist=1.7, min_dist=0.9):
         max_adj = dist + np.diag(np.inf*np.ones(dist.shape[0])) < max_dist
         max_graph = nx.Graph(max_adj)
         max_graphs = list(nx.connected_component_subgraphs(max_graph))
+        if counter >= 10000:
+            raise Exception()
 
     
     return mol_pos
