@@ -25,7 +25,7 @@ def scale_matrix(A, scale_col = np.array([10,7,2]), scale_row = np.ones((19,1)))
         rowsum = A.sum(axis=1)[:,na]
         A/= rowsum
         
-        if count> 1000:
+        if count> 10000:
             print('Scale. out of patience')
             raise Exception
 
