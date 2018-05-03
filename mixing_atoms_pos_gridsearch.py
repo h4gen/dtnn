@@ -161,19 +161,20 @@ for i, paramset in enumerate(params_list):
             Pgrad = -ret[3].eval(session=sess, feed_dict=feed_dict0)
             meta_mol_pos += P_eta * Pgrad
             
-#            try:
-            meta_mol_pos = fix_positions(meta_mol_pos, min_dist=MIN_ATOM_DIST, max_dist=MAX_ATOM_DIST)
-            meta_mol_mix += M_eta * np.hstack(( Hgrad, Cgrad, Ograd))
-            if np.any(meta_mol_mix == np.nan) or np.any(meta_mol_mix == np.inf):
-                print('Invalid values in mixing matrix. Skipping.')
+            try:
+                meta_mol_pos = fix_positions(meta_mol_pos, min_dist=MIN_ATOM_DIST, max_dist=MAX_ATOM_DIST)
+                meta_mol_mix += M_eta * np.hstack(( Hgrad, Cgrad, Ograd))
+                if np.any(meta_mol_mix == np.nan) or np.any(meta_mol_mix == np.inf):
+                    print('Invalid values in mixing matrix. Skipping.')
+                    break
+                meta_mol_mix[meta_mol_mix<0]=1e-7
+                meta_mol_mix[meta_mol_mix>1]=1
+                meta_mol_mix = scale_matrix(meta_mol_mix, np.array([10,7,2]), np.ones((19,1)))
+                meta_mol_numbers_isospace = max_likely_numbers(meta_mol_mix.copy())
+            except FloatingPointError:
+                print('Error during numerics. Skipping.')
+                print(meta_mol_mix)
                 break
-            meta_mol_mix[meta_mol_mix<0]=1e-7
-            meta_mol_mix[meta_mol_mix>1]=1
-            meta_mol_mix = scale_matrix(meta_mol_mix, np.array([10,7,2]), np.ones((19,1)))
-            meta_mol_numbers_isospace = max_likely_numbers(meta_mol_mix.copy())
-#            except:
-#                print('Error during numerics. Skipping.')
-#                break
     
             meta_mol = Atoms( positions=meta_mol_pos, numbers=meta_mol_numbers_isospace )
     
