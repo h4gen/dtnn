@@ -16,13 +16,18 @@ import networkx as nx
 
 
 def scale_matrix(A, scale_col = np.array([10,7,2]), scale_row = np.ones((19,1))):
-    while not (np.all(np.isclose(A.sum(axis=0), scale_col, rtol=1e-8)) and np.all(np.isclose(A.sum(axis=1), scale_row, rtol=1e-3))):
-        
+    count = 0
+    while not (np.all(np.isclose(A.sum(axis=0), scale_col, rtol=1e-5)) and np.all(np.isclose(A.sum(axis=1), scale_row, rtol=1e-5))):
+        count += 1
         colsum = A.sum(axis=0)
         A/= colsum
         A*= scale_col
         rowsum = A.sum(axis=1)[:,na]
         A/= rowsum
+        
+        if count> 1000:
+            print('Scale. out of patience')
+            raise Exception
 
     return A           
 
@@ -44,7 +49,7 @@ class L1_Schedule:
         self.scale = scale
     def f(self, x):
         if x < self.cut:
-            return 1e-6
+            return 1e-4
         else:
             arg = (x-self.cut)/self.div
             return self.scale * (arg)/(1+np.abs(arg))
