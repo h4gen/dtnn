@@ -106,7 +106,7 @@ for i, paramset in enumerate(params_list):
         model.restore(sess)
         g = tf.get_default_graph()
         U0_p = [None]
-        l1scale = tf.Variable(1e-9)
+        l1scale = tf.Variable(1e-4)
         ret = tf.gradients(tf.add(\
                             tf.reduce_sum(y), \
                             tf.multiply(l1scale, \
@@ -115,7 +115,7 @@ for i, paramset in enumerate(params_list):
                             tf.sqrt(tf.concat((features['Hmix'],features['Cmix'], features['Omix']), axis=0)))))),\
                            [features['Hmix'],features['Cmix'], features['Omix'], features['positions']])
         
-        for n in range(100000):
+        for n in range(50000):
             reg = l1s.f(n)
             if n % 1000 == 0 :
                 print(n)
@@ -171,7 +171,7 @@ for i, paramset in enumerate(params_list):
                 meta_mol_mix[meta_mol_mix>1]=1
                 meta_mol_mix = scale_matrix(meta_mol_mix, np.array([10,7,2]), np.ones((19,1)))
                 meta_mol_numbers_isospace = max_likely_numbers(meta_mol_mix.copy())
-            except FloatingPointError:
+            except:
                 print('Error during numerics. Skipping.')
                 print(meta_mol_mix)
                 break
