@@ -95,7 +95,7 @@ for i, paramset in enumerate(params_list):
     
     print(str(i) + '. Starting new grid point with ' + str(paramset))
     
-    directory = 'gridsearch/' + str(paramset)
+    directory = 'gridsearch_qm9/' + str(paramset)
     if not os.path.exists(directory):
         os.makedirs(directory)
     with open(directory + '/' + 'params.pkl', 'wb') as file:
