@@ -48,11 +48,11 @@ class L1_Schedule:
         self.div = div
         self.scale = scale
     def f(self, x):
-        if x < self.cut:
+        if x <= self.cut:
             return 1e-4
         else:
-            arg = (x-self.cut)/self.div
-            return self.scale * (arg)/(1+np.abs(arg))
+            arg = (x-self.cut)*self.scale
+            return (arg)/(self.div+np.abs(arg))
         
 
 def to_proba_isospace(atom_mix):
