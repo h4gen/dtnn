@@ -44,16 +44,24 @@ features = {
 model = DTNN(model_dir)
 model_output = model.get_output(features, is_training=False)
 y = model_output['y']
+l1scale = tf.Variable(1e-4)
+ret = tf.gradients(tf.add(\
+                    tf.reduce_sum(y), \
+                    tf.multiply(l1scale, \
+                    tf.square(\
+                    tf.reduce_sum(\
+                    tf.sqrt(tf.concat((features['Hmix'],features['Cmix'], features['Omix']), axis=0)))))),\
+                   [features['Hmix'],features['Cmix'], features['Omix'], features['positions']])
 #l1_list = [tf.concat((features['Hmix'][i], features['Cmix'][i], features['Omix'][i]), axis=0) for i in range(19)]
 #%%
-DELTA_MEAN = 1e-4
-P_eta_list = {'P_eta': [1e-3]}
-M_eta_list = {'M_eta': [1e-3]}
+DELTA_MEAN = 5e-4
+P_eta_list = {'P_eta': [1e-3, 1e-20]}
+M_eta_list = {'M_eta': [1e-3, 1e-20]}
 cut_list = {'cut': [0, 1e3, 1e4,]}
 div_list = {'div': [1e3, 1e4, 1e5]}
 scale_list = {'scale': {0.2, 0.4, 0.6, 0.8, 1}}
 MAX_ATOM_DIST_list = {'maad': [1.7]}
-MIN_ATOM_DIST_list = {'miad': [.7]} 
+MIN_ATOM_DIST_list = {'miad': [.9]} 
 param_grid = {**P_eta_list, ** M_eta_list, **cut_list, **div_list, **scale_list, **MAX_ATOM_DIST_list, ** MIN_ATOM_DIST_list}
 params_list = list(ParameterGrid(param_grid))
 shuffle(params_list)
@@ -105,16 +113,9 @@ for i, paramset in enumerate(params_list):
     with tf.Session() as sess:
         l1s = L1_Schedule(cut = cut, div= div, scale=scale) 
         model.restore(sess)
-        g = tf.get_default_graph()
+#        g = tf.get_default_graph()
         U0_p = [None]
-        l1scale = tf.Variable(1e-4)
-        ret = tf.gradients(tf.add(\
-                            tf.reduce_sum(y), \
-                            tf.multiply(l1scale, \
-                            tf.square(\
-                            tf.reduce_sum(\
-                            tf.sqrt(tf.concat((features['Hmix'],features['Cmix'], features['Omix']), axis=0)))))),\
-                           [features['Hmix'],features['Cmix'], features['Omix'], features['positions']])
+
         
         for n in range(50000):
             reg = l1s.f(n)
