@@ -54,9 +54,9 @@ ret = tf.gradients(tf.add(\
                    [features['Hmix'],features['Cmix'], features['Omix'], features['positions']])
 #l1_list = [tf.concat((features['Hmix'][i], features['Cmix'][i], features['Omix'][i]), axis=0) for i in range(19)]
 #%%
-DELTA_MEAN = 5e-4
-P_eta_list = {'P_eta': [1e-3, 1e-20]}
-M_eta_list = {'M_eta': [1e-3, 1e-20]}
+DELTA_MEAN = 1e-3
+P_eta_list = {'P_eta': [1e-3]}
+M_eta_list = {'M_eta': [1e-3]}
 cut_list = {'cut': [0, 1e3, 1e4,]}
 div_list = {'div': [1e3, 1e4, 1e5]}
 scale_list = {'scale': {0.2, 0.4, 0.6, 0.8, 1}}
