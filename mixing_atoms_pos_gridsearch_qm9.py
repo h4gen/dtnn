@@ -106,101 +106,100 @@ for i, paramset in enumerate(params_list):
     directory = 'gridsearch_qm9/' + str(paramset)
     if not os.path.exists(directory):
         os.makedirs(directory)
+        with open(directory + '/' + 'params.pkl', 'wb') as file:
+            pickle.dump(paramset, file)
+            file.close()
+    
+        with tf.Session() as sess:
+            l1s = L1_Schedule(cut = cut, div= div, scale=scale) 
+            model.restore(sess)
+    #        g = tf.get_default_graph()
+            U0_p = [None]
+    
+            
+            for n in range(50000):
+                reg = l1s.f(n)
+                if n % 1000 == 0 :
+                    print(n)
+        
+                    meta_mol.write(directory + '/' + str(n)+'.xyz')
+    #                save_mol2(meta_mol, directory + '/' +  'meta_mol' +str(n))
+    
+                    with open(directory + '/' + 'energies.pkl', 'wb') as file:
+                        pickle.dump(U0_p, file)
+                        file.close()
+                    with open(directory + '/' + 'matrices.pkl', 'wb') as file:
+                        pickle.dump(mixing_matrices, file)
+                        file.close()
+                    with open(directory + '/' + 'reg.pkl', 'wb') as file:
+                        pickle.dump(regs, file)
+                        file.close()
+    
+                    if n > 5000 and bool((np.abs((np.array(U0_p).ravel()[-4000:-1] - np.array(U0_p).ravel()[-4001:-2]).mean()) < DELTA_MEAN)):
+                        print('Model converged. Stopping...')
+                        break
+                    
+                
+                feed_dict0 = {
+                    features['numbers']:
+                        np.array(molecule0.numbers).astype(np.int64),
+                    features['positions']:
+                        np.array(meta_mol_pos).astype(np.float32),
+                    features['zmask']:
+                        np.array((molecule0.numbers > 0).astype(np.float32)),
+                    features['Hmix']:
+                        meta_mol_mix[:,0,na],
+                    features['Cmix']:
+                        meta_mol_mix[:,1,na],
+                    features['Omix']:
+                        meta_mol_mix[:,2,na]
+                        }  
+                
+                
+                l1scale.assign(reg).op.run(session=sess, feed_dict=feed_dict0)
+                Hgrad = -ret[0].eval(session=sess, feed_dict=feed_dict0)
+                Cgrad = -ret[1].eval(session=sess, feed_dict=feed_dict0)
+                Ograd = -ret[2].eval(session=sess, feed_dict=feed_dict0)
+                Pgrad = -ret[3].eval(session=sess, feed_dict=feed_dict0)
+                meta_mol_pos += P_eta * Pgrad
+                
+                try:
+                    meta_mol_pos = fix_positions(meta_mol_pos, min_dist=MIN_ATOM_DIST, max_dist=MAX_ATOM_DIST)
+                    meta_mol_mix += M_eta * np.hstack(( Hgrad, Cgrad, Ograd))
+                    if np.any(meta_mol_mix == np.nan) or np.any(meta_mol_mix == np.inf):
+                        print('Invalid values in mixing matrix. Skipping.')
+                        break
+                    meta_mol_mix[meta_mol_mix<0]=1e-7
+                    meta_mol_mix[meta_mol_mix>1]=1
+                    meta_mol_mix = scale_matrix(meta_mol_mix, np.array([10,7,2]), np.ones((19,1)))
+                    meta_mol_numbers_isospace = max_likely_numbers(meta_mol_mix.copy())
+                except FloatingPointError:
+                    print('Error during numerics. Skipping.')
+                    print(meta_mol_mix)
+                    break
+        
+                meta_mol = Atoms( positions=meta_mol_pos, numbers=meta_mol_numbers_isospace )
+        
+                
+                feed_dict_meta = {
+                    features['numbers']:
+                        np.array(meta_mol.numbers).astype(np.int64),
+                    features['positions']:
+                        np.array(meta_mol.positions).astype(np.float32),
+                    features['zmask']:
+                        np.array((meta_mol.numbers > 0).astype(np.float32)),
+                    features['Hmix']:
+                        meta_mol_mix[:,0,na],
+                    features['Cmix']:
+                        meta_mol_mix[:,1,na],
+                    features['Omix']:
+                        meta_mol_mix[:,2,na]
+                        }
+                            
+                U0_p.append(sess.run(y, feed_dict=feed_dict_meta))
+                mixing_matrices.append(meta_mol_mix)
     else:
         print('Directory already exists')
-        break
-    with open(directory + '/' + 'params.pkl', 'wb') as file:
-        pickle.dump(paramset, file)
-        file.close()
-
-    with tf.Session() as sess:
-        l1s = L1_Schedule(cut = cut, div= div, scale=scale) 
-        model.restore(sess)
-#        g = tf.get_default_graph()
-        U0_p = [None]
-
-        
-        for n in range(50000):
-            reg = l1s.f(n)
-            if n % 1000 == 0 :
-                print(n)
-    
-                meta_mol.write(directory + '/' + str(n)+'.xyz')
-#                save_mol2(meta_mol, directory + '/' +  'meta_mol' +str(n))
-
-                with open(directory + '/' + 'energies.pkl', 'wb') as file:
-                    pickle.dump(U0_p, file)
-                    file.close()
-                with open(directory + '/' + 'matrices.pkl', 'wb') as file:
-                    pickle.dump(mixing_matrices, file)
-                    file.close()
-                with open(directory + '/' + 'reg.pkl', 'wb') as file:
-                    pickle.dump(regs, file)
-                    file.close()
-
-                if n > 5000 and bool((np.abs((np.array(U0_p).ravel()[-4000:-1] - np.array(U0_p).ravel()[-4001:-2]).mean()) < DELTA_MEAN)):
-                    print('Model converged. Stopping...')
-                    break
-                
-            
-            feed_dict0 = {
-                features['numbers']:
-                    np.array(molecule0.numbers).astype(np.int64),
-                features['positions']:
-                    np.array(meta_mol_pos).astype(np.float32),
-                features['zmask']:
-                    np.array((molecule0.numbers > 0).astype(np.float32)),
-                features['Hmix']:
-                    meta_mol_mix[:,0,na],
-                features['Cmix']:
-                    meta_mol_mix[:,1,na],
-                features['Omix']:
-                    meta_mol_mix[:,2,na]
-                    }  
-            
-            
-            l1scale.assign(reg).op.run(session=sess, feed_dict=feed_dict0)
-            Hgrad = -ret[0].eval(session=sess, feed_dict=feed_dict0)
-            Cgrad = -ret[1].eval(session=sess, feed_dict=feed_dict0)
-            Ograd = -ret[2].eval(session=sess, feed_dict=feed_dict0)
-            Pgrad = -ret[3].eval(session=sess, feed_dict=feed_dict0)
-            meta_mol_pos += P_eta * Pgrad
-            
-            try:
-                meta_mol_pos = fix_positions(meta_mol_pos, min_dist=MIN_ATOM_DIST, max_dist=MAX_ATOM_DIST)
-                meta_mol_mix += M_eta * np.hstack(( Hgrad, Cgrad, Ograd))
-                if np.any(meta_mol_mix == np.nan) or np.any(meta_mol_mix == np.inf):
-                    print('Invalid values in mixing matrix. Skipping.')
-                    break
-                meta_mol_mix[meta_mol_mix<0]=1e-7
-                meta_mol_mix[meta_mol_mix>1]=1
-                meta_mol_mix = scale_matrix(meta_mol_mix, np.array([10,7,2]), np.ones((19,1)))
-                meta_mol_numbers_isospace = max_likely_numbers(meta_mol_mix.copy())
-            except FloatingPointError:
-                print('Error during numerics. Skipping.')
-                print(meta_mol_mix)
-                break
-    
-            meta_mol = Atoms( positions=meta_mol_pos, numbers=meta_mol_numbers_isospace )
-    
-            
-            feed_dict_meta = {
-                features['numbers']:
-                    np.array(meta_mol.numbers).astype(np.int64),
-                features['positions']:
-                    np.array(meta_mol.positions).astype(np.float32),
-                features['zmask']:
-                    np.array((meta_mol.numbers > 0).astype(np.float32)),
-                features['Hmix']:
-                    meta_mol_mix[:,0,na],
-                features['Cmix']:
-                    meta_mol_mix[:,1,na],
-                features['Omix']:
-                    meta_mol_mix[:,2,na]
-                    }
-                        
-            U0_p.append(sess.run(y, feed_dict=feed_dict_meta))
-            mixing_matrices.append(meta_mol_mix)
             
 
 
