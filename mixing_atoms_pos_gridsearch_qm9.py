@@ -106,6 +106,9 @@ for i, paramset in enumerate(params_list):
     directory = 'gridsearch_qm9/' + str(paramset)
     if not os.path.exists(directory):
         os.makedirs(directory)
+    else:
+        print('Directory already exists')
+        break
     with open(directory + '/' + 'params.pkl', 'wb') as file:
         pickle.dump(paramset, file)
         file.close()
