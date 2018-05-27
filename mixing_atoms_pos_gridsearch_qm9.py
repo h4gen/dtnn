@@ -55,8 +55,8 @@ ret = tf.gradients(tf.add(\
 #l1_list = [tf.concat((features['Hmix'][i], features['Cmix'][i], features['Omix'][i]), axis=0) for i in range(19)]
 #%%
 DELTA_MEAN = 1e-3
-P_eta_list = {'P_eta': [1e-3]}
-M_eta_list = {'M_eta': [1e-3]}
+P_eta_list = {'P_eta': [1e-2]}
+M_eta_list = {'M_eta': [1e-2]}
 cut_list = {'cut': [0, 1e3, 1e4,]}
 div_list = {'div': [1e3, 1e4, 1e5]}
 scale_list = {'scale': {0.2, 0.4, 0.6, 0.8, 1}}
@@ -161,11 +161,14 @@ for i, paramset in enumerate(params_list):
                 Cgrad = -ret[1].eval(session=sess, feed_dict=feed_dict0)
                 Ograd = -ret[2].eval(session=sess, feed_dict=feed_dict0)
                 Pgrad = -ret[3].eval(session=sess, feed_dict=feed_dict0)
-                meta_mol_pos += P_eta * Pgrad
+                meta_mol_pos += P_eta * Pgrad / np.linalg.norm(Pgrad)
                 
                 try:
                     meta_mol_pos = fix_positions(meta_mol_pos, min_dist=MIN_ATOM_DIST, max_dist=MAX_ATOM_DIST)
-                    meta_mol_mix += M_eta * np.hstack(( Hgrad, Cgrad, Ograd))
+                    mix_grad = np.hstack(( Hgrad, Cgrad, Ograd))
+                    mix_grad[mix_grad==-np.inf] = 0
+                    mix_grad[mix_grad==np.inf] = 0
+                    meta_mol_mix += M_eta * mix_grad / np.linalg.norm(mix_grad)
                     if np.any(meta_mol_mix == np.nan) or np.any(meta_mol_mix == np.inf):
                         print('Invalid values in mixing matrix. Skipping.')
                         break
